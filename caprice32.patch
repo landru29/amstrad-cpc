@@ -1,0 +1,90 @@
+diff --git a/doc/man.html b/doc/man.html
+index 945a207..9d1ffef 100644
+--- a/doc/man.html
++++ b/doc/man.html
+@@ -190,7 +190,7 @@ default to a standard US keyboard map.</p>
+ 
+ 
+ <p style="margin-left:11%; margin-top: 1em"><b>-a</b>,
+-<b>--autocmd</b>=<i>COMMAND</i></p>
++<b>--autocmd</b>=<i>COMMAND</i> | <i>@FILENAME</i></p>
+ 
+ <p style="margin-left:22%;">pass command to execute to the
+ emulator. The option can be repeated to pass multiple
+@@ -198,6 +198,10 @@ commands. For example: cap32 -a &rsquo;print
+ &quot;Hello&quot;&rsquo; -a &rsquo;print
+ &quot;World&quot;&rsquo;</p>
+ 
++<p style="margin-left:22%;">with prefix &quot;@&quot;, a 
++filename is specified. All commands in the file are passed.
++For example: cap32 -a &rsquo;@/tmp/cmd.txt&rsquo;</p>
++
+ <p style="margin-left:11%;"><b>-c</b>,
+ <b>--cfg_file</b>=<i>FILE</i></p>
+ 
+diff --git a/doc/man6/cap32.6 b/doc/man6/cap32.6
+index f22c9ce..3de3c76 100644
+--- a/doc/man6/cap32.6
++++ b/doc/man6/cap32.6
+@@ -112,8 +112,11 @@ If the mapping file is not defined or not found, Caprice32 will default to a sta
+ .SH OPTIONS
+ .PP
+ .TP
+-\fB\-a\fR, \fB\-\-autocmd\fR=\fICOMMAND\fR
++\fB\-a\fR, \fB\-\-autocmd\fR=\fICOMMAND\fR | \fI@FILENAME\fR
+ pass command to execute to the emulator. The option can be repeated to pass multiple commands. For example: cap32 -a 'print "Hello"' -a 'print "World"'
++.RS
++with prefix "@", a filename is specified. All commands in the file are passed. For example: cap32 -a '@/tmp/cmd.txt'
++.RE
+ .TP
+ \fB\-c\fR, \fB\-\-cfg_file\fR=\fIFILE\fR
+ use FILE as the emulator configuration file.
+diff --git a/src/argparse.cpp b/src/argparse.cpp
+index ceb23c6..2ebda3c 100644
+--- a/src/argparse.cpp
++++ b/src/argparse.cpp
+@@ -94,6 +94,12 @@ std::string replaceCap32Keys(std::string command)
+   return command;
+ }
+ 
++void inlineString(CapriceArgs& args, char* data)
++{
++   args.autocmd += replaceCap32Keys(data);
++   args.autocmd += "\n";
++}
++
+ void parseArguments(int argc, char **argv, std::vector<std::string>& slot_list, CapriceArgs& args)
+ {
+    int option_index = 0;
+@@ -111,9 +117,29 @@ void parseArguments(int argc, char **argv, std::vector<std::string>& slot_list,
+       switch (c)
+       {
+          case 'a':
++            if (optarg[0] == '@')
++            {
++               /* Well, this is a file content we want to inject */
++               std::ifstream inlineStream(&optarg[1], std::ifstream::in);
++               if(!inlineStream.is_open())
++               {
++                  /* The filename is not correct, it may be a string to inject */
++                  LOG_VERBOSE("Append to autocmd: " << optarg);
++                  inlineString(args, optarg);
++                  break;
++               }
++               /* Inject all lines from the file */
++               LOG_VERBOSE("Append file content to autocmd: " << &optarg[1]);
++               while(inlineStream.good())
++               {
++                  char chLine[256];
++                  inlineStream.getline(chLine, 256);
++                  inlineString(args, chLine);
++               }
++               break;
++            }
+             LOG_VERBOSE("Append to autocmd: " << optarg);
+-            args.autocmd += replaceCap32Keys(optarg);
+-            args.autocmd += "\n";
++            inlineString(args, optarg);
+             break;
+ 
+          case 'c':

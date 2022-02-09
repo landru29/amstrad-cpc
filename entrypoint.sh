@@ -7,22 +7,24 @@ cd /
 git clone https://github.com/ColinPitrat/caprice32.git
 cd /caprice32
 export VERSION=`git tag | grep v | sort -r | head -n 1| sed -e 's/v//i'`
+git apply ../caprice32.patch
 
 BASE_PATH="amstrad-cpc-${VERSION}"
 
 mkdir -p /${BASE_PATH}/DEBIAN
 mkdir -p /${BASE_PATH}/usr/local/bin
 mkdir -p /${BASE_PATH}/usr/local/share
+mkdir -p /${BASE_PATH}/usr/share/man
 cat /caprice32/debian/control \
     | sed -e 's/^Depends.*$/Depends: libsdl2-2.0-0, libfreetype6, zlib1g, libpng16-16, libncurses5/' \
     | sed -e 's/^Architecture.*$/Architecture: amd64/' \
     | sed -e 's/Package.*/Package: amstrad-cpc/' \
     | sed -r '/^\s*$/d'>/${BASE_PATH}/DEBIAN/control
-cd /caprice32
 export VERSION=`git tag | grep v | sort -r | head -n 1| sed -e 's/v//i'`
 echo "Version: ${VERSION}" >>/${BASE_PATH}/DEBIAN/control
+cp -r /caprice32/doc/man6 /${BASE_PATH}/usr/share/man/.
+gzip /${BASE_PATH}/usr/share/man/man6/cap32.6
 
-cd caprice32
 make install
 cp -r /usr/local/share/caprice32 /${BASE_PATH}/usr/local/share/caprice32
 cp -r /usr/local/bin/cap32 /${BASE_PATH}/usr/local/bin/.

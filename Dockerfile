@@ -17,5 +17,6 @@ COPY ./png2cpcsprite.c /png2cpcsprite.c
 COPY ./2cdt /2cdt
 COPY ./cpcxfs /cpcxfs
 COPY ./dskinfo /dskinfo
+COPY ./caprice32.patch /caprice32.patch
 
 ENTRYPOINT [ "/entrypoint.sh" ]
