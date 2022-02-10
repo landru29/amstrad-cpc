@@ -29,7 +29,10 @@ make install
 cp -r /usr/local/share/caprice32 /${BASE_PATH}/usr/local/share/caprice32
 cp -r /usr/local/bin/cap32 /${BASE_PATH}/usr/local/bin/.
 mkdir -p /${BASE_PATH}/etc
-cat /etc/cap32.cfg |sed -e 's#/cpc/#/#g' > /${BASE_PATH}/etc/cap32.cfg
+cat /etc/cap32.cfg \
+    | sed -e 's/kbd_layout=.*/kbd_layout=keymap_fr_linux.map/' \
+    | sed -e 's/keyboard=.*/keyboard=1/' \
+    | sed -e 's#/cpc/#/#g' > /${BASE_PATH}/etc/cap32.cfg
 mkdir -p /${BASE_PATH}/usr/local/share/caprice32/cart
 chmod ugoa+rw /${BASE_PATH}/usr/local/share/caprice32/cart
 mkdir -p /${BASE_PATH}/usr/local/share/caprice32/disk
